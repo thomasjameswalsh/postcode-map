@@ -4,8 +4,10 @@ import { MapContainer, TileLayer, GeoJSON } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import postcodePolygons from '@/data/Sample_PostcodeDistrictsPolygons_multi.json';
 
+import type { LatLngExpression } from "leaflet";
+
 export default function() {
-    const position = [51.505, -0.09];
+    const center: LatLngExpression = [51.505, -0.09];
 
     type featureCollection = {
         type: string;
@@ -20,7 +22,7 @@ export default function() {
     return (
         <div className = "h-[500px] w-full">
         <MapContainer
-            center = {position}
+            center = {center}
             zoom = {12}
             className = "w-full h-full">
                 <TileLayer 
