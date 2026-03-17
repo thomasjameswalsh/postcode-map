@@ -2,7 +2,7 @@
 
 import { MapContainer, TileLayer, GeoJSON } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
-import postcodePolygons from '@/data/PostcodeDistrictsPolygons_multi.json';
+import postcodePolygons from '@/data/Sample_PostcodeDistrictsPolygons_multi.json';
 
 export default function() {
     const position = [51.505, -0.09];
