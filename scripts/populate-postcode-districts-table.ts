@@ -27,26 +27,26 @@ async function main() {
         const rawDistrictCode = props.name ?? null;
 
         // This should not happen
-        if ( !rawDistrictCode || rawDistrictCode.trim() === "") {
-            console.log(`On insertion ${inserted + 1} no property name found.`);
+        if ( rawDistrictCode == null || String(rawDistrictCode).trim() === "") {
+            console.log(`On insertion ${inserted + failed + 1} no property name found.`);
             failed += 1;
             continue;
         }
         
         const normDistrictCode = normalizeDistrict(rawDistrictCode);
 
-        await client.query(`
+        await client.query(
+            `
             INSERT INTO postcodes (district, district_norm, feature)
             VALUES ($1, $2, $3::jsonb)
             on conflict (district_norm) do update
             set feature = excluded.feature
-        `,
-        [rawDistrictCode, normDistrictCode, JSON.stringify(feature)]);
+            `,
+            [rawDistrictCode, normDistrictCode, JSON.stringify(feature)]
+        );
 
         inserted += 1;
     }
-
-    await client.end();
 
     console.log("Population complete");
     console.log(`Inserted ${inserted} records`);
@@ -56,4 +56,6 @@ async function main() {
 main().catch((err) => {
   console.error("Operaiton failed");
   console.error(err);
+}).finally(async () => {
+    await client.end();
 });
