@@ -20,7 +20,7 @@ let duplicated: {
     firstSeen: {
         index: number,
         name: string
-    } | undefined,
+    },
     duplicateIndex: number,
     duplicateName: string
 }[] = [];
@@ -50,7 +50,7 @@ async function main() {
 
         if ( seen.has(normDistrictCode) ) {
             duplicated.push({
-                firstSeen: seen.get(normDistrictCode),
+                firstSeen: seen.get(normDistrictCode)!,
                 duplicateIndex: i,
                 duplicateName: rawDistrictCode,
             });
