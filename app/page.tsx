@@ -71,8 +71,10 @@ export default function HomePage() {
           <button
             type="button"
             onClick={() => {
-              const updated = postcodes.filter((p) => p !== postcode);
-              setPostcodes(updated);
+              const updatedPostcodes = postcodes.filter((p) => p !== postcode);
+              const updatedFeatures = features.filter((f) => f.properties.name !== postcode);
+              setPostcodes(updatedPostcodes);
+              setFeatures(updatedFeatures);
             }}
             className="flex h-5 w-5 items-center justify-center rounded-full bg-gray-300 text-xs hover:bg-red-500 hover:text-white transition"
           >✕</button>
