@@ -1,12 +1,15 @@
 'use client';
 
 import { MapContainer, TileLayer, GeoJSON } from 'react-leaflet';
-import 'leaflet/dist/leaflet.css';
 import postcodePolygons from '@/data/Sample_PostcodeDistrictsPolygons_multi.json';
-
 import type { LatLngExpression } from "leaflet";
+import 'leaflet/dist/leaflet.css';
 
-export default function() {
+type PostcodeMapProps = {
+    features: any[];
+};
+
+export default function PostcodeMap({ features }: PostcodeMapProps) {
     const center: LatLngExpression = [51.505, -0.09];
 
     type featureCollection = {
@@ -28,7 +31,9 @@ export default function() {
                 <TileLayer 
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"></TileLayer>
             
-            <GeoJSON data={sampleFeature as any} />
+            {features.map((feature, index) => (
+                <GeoJSON key={index} data={feature} />
+            ))};
         </MapContainer>
         </div>
     );

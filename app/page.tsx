@@ -11,17 +11,27 @@ const PostcodeMap = dynamic(
 export default function HomePage() {
   const [input, setInput] = useState("");
   const [postcodes, setPostcodes] = useState<string[]>([]);
+  const [features, setFeatures] = useState<any[]>([]);
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
     const trimmed = input.trim();
+    if (!trimmed) return;
 
-    if (!trimmed) {
+    const response = await fetch(
+      `/api/postcode?district=${encodeURIComponent(trimmed)}`
+    );
+
+    if ( ! response.ok ) {
+      console.log("Postcode district not recognised.");
       return;
     }
 
-    setPostcodes([...postcodes, trimmed]);
+    const data = await response.json();
+
+    setPostcodes((prev) => [...prev, data.district_norm]);
+    setFeatures((prev) => [...prev, data.feature]);
     setInput("");
   }
 
@@ -29,7 +39,7 @@ export default function HomePage() {
     <div className = "p-6">
     <h1 className = "text-2xl font-bold">Postcode Map</h1>
     <div className = "mt-6">
-      <PostcodeMap></PostcodeMap>
+      <PostcodeMap features={features}></PostcodeMap>
     </div>
 
     <p className = "mt-2">Select postcodes:</p>
