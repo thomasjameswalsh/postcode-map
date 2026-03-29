@@ -31,8 +31,8 @@ export default function PostcodeMap({ features }: PostcodeMapProps) {
                 <TileLayer 
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"></TileLayer>
             
-            {features.map((feature, index) => (
-                <GeoJSON key={index} data={feature} />
+            {features.map((feature, _index) => (
+                <GeoJSON key={feature.properties.name} data={feature} />
             ))};
         </MapContainer>
         </div>
