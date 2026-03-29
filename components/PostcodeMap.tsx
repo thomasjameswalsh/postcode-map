@@ -5,13 +5,14 @@ import postcodePolygons from '@/data/Sample_PostcodeDistrictsPolygons_multi.json
 import type { LatLngExpression } from "leaflet";
 import 'leaflet/dist/leaflet.css';
 
+import { PostcodeRow } from '@/lib/types/postcodes';
 import { GeojsonFeature } from '@/lib/types/geojson';
 
 type PostcodeMapProps = {
-    features: GeojsonFeature[];
+    postcodesData: PostcodeRow[];
 };
 
-export default function PostcodeMap({ features }: PostcodeMapProps) {
+export default function PostcodeMap({ postcodesData }: PostcodeMapProps) {
     const center: LatLngExpression = [51.505, -0.09];222
 
     return (
@@ -23,8 +24,10 @@ export default function PostcodeMap({ features }: PostcodeMapProps) {
                 <TileLayer 
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"></TileLayer>
             
-            {features.map((feature, _index) => (
-                <GeoJSON key={feature.properties.name} data={feature} />
+            {postcodesData.map((data, _index) => (
+                <GeoJSON 
+                key = { data.district_norm } 
+                data = { data.feature } />
             ))};
         </MapContainer>
         </div>

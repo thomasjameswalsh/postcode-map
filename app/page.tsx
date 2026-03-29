@@ -39,9 +39,7 @@ export default function HomePage() {
     <div className = "p-6">
     <h1 className = "text-2xl font-bold">Postcode Map</h1>
     <div className = "mt-6">
-      <PostcodeMap features = {
-        postcodesData.map((p, _i) => p.feature as GeojsonFeature)
-      }></PostcodeMap>
+      <PostcodeMap postcodesData = {postcodesData}></PostcodeMap>
     </div>
 
     <p className = "mt-2">Select postcodes:</p>
