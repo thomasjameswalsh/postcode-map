@@ -13,8 +13,7 @@ const PostcodeMap = dynamic(
 
 export default function HomePage() {
   const [input, setInput] = useState("");
-  const [postcodes, setPostcodes] = useState<string[]>([]);
-  const [features, setFeatures] = useState<GeojsonFeature[]>([]);
+  const [postcodesData, setPostcodesData] = useState<PostcodeRow[]>([]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -31,10 +30,8 @@ export default function HomePage() {
       return;
     }
 
-    const data: PostcodeRow = await response.json();
-
-    setPostcodes((prev) => [...prev, data.district_norm]);
-    setFeatures((prev) => [...prev, data.feature]);
+    const responseData: PostcodeRow = await response.json();
+    setPostcodesData((prev) => [...prev, responseData]);
     setInput("");
   }
 
@@ -42,7 +39,9 @@ export default function HomePage() {
     <div className = "p-6">
     <h1 className = "text-2xl font-bold">Postcode Map</h1>
     <div className = "mt-6">
-      <PostcodeMap features={features}></PostcodeMap>
+      <PostcodeMap features = {
+        postcodesData.map((p, _i) => p.feature as GeojsonFeature)
+      }></PostcodeMap>
     </div>
 
     <p className = "mt-2">Select postcodes:</p>
@@ -64,20 +63,20 @@ export default function HomePage() {
     <div className = "mt-6">
       <h2 className = "font-semibold">Entered Postcode</h2>
 
-      {postcodes.map((postcode, _index) => (
+      {postcodesData.map((postcodeData, _index) => (
         <div
-          key = {postcode}
+          key = {postcodeData.district_norm}
           className = "flex items-center gap-2 rounded-md border px-3 py-1 w-fit">
         
-          <span>{postcode}</span>
+          <span>{postcodeData.district_norm}</span>
 
           <button
             type="button"
             onClick={() => {
-              const updatedPostcodes = postcodes.filter((p) => p !== postcode);
-              const updatedFeatures = features.filter((f) => f.properties.name !== postcode);
-              setPostcodes(updatedPostcodes);
-              setFeatures(updatedFeatures);
+              const updatedPostcodesData = postcodesData.filter(
+                (p: PostcodeRow) => p.district_norm !== postcodeData.district_norm
+              );
+              setPostcodesData(updatedPostcodesData);
             }}
             className="flex h-5 w-5 items-center justify-center rounded-full bg-gray-300 text-xs hover:bg-red-500 hover:text-white transition"
           >✕</button>
