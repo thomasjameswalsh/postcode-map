@@ -3,6 +3,9 @@
 import { useState } from "react";
 import dynamic from "next/dynamic";
 
+import { PostcodeRow } from "@/lib/types/postcodes";
+import { GeojsonFeature } from "@/lib/types/geojson";
+
 const PostcodeMap = dynamic(
   () => import('@/components/PostcodeMap'),
   { ssr: false }
@@ -11,7 +14,7 @@ const PostcodeMap = dynamic(
 export default function HomePage() {
   const [input, setInput] = useState("");
   const [postcodes, setPostcodes] = useState<string[]>([]);
-  const [features, setFeatures] = useState<any[]>([]);
+  const [features, setFeatures] = useState<GeojsonFeature[]>([]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -28,7 +31,7 @@ export default function HomePage() {
       return;
     }
 
-    const data = await response.json();
+    const data: PostcodeRow = await response.json();
 
     setPostcodes((prev) => [...prev, data.district_norm]);
     setFeatures((prev) => [...prev, data.feature]);
@@ -61,7 +64,7 @@ export default function HomePage() {
     <div className = "mt-6">
       <h2 className = "font-semibold">Entered Postcode</h2>
 
-      {postcodes.map((postcode, index) => (
+      {postcodes.map((postcode, _index) => (
         <div
           key = {postcode}
           className = "flex items-center gap-2 rounded-md border px-3 py-1 w-fit">

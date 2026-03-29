@@ -5,22 +5,14 @@ import postcodePolygons from '@/data/Sample_PostcodeDistrictsPolygons_multi.json
 import type { LatLngExpression } from "leaflet";
 import 'leaflet/dist/leaflet.css';
 
+import { GeojsonFeature } from '@/lib/types/geojson';
+
 type PostcodeMapProps = {
-    features: any[];
+    features: GeojsonFeature[];
 };
 
 export default function PostcodeMap({ features }: PostcodeMapProps) {
-    const center: LatLngExpression = [51.505, -0.09];
-
-    type featureCollection = {
-        type: string;
-        features: any[];
-    };
-    const data = postcodePolygons as featureCollection;
-
-    const sampleFeature = data.features.find(
-        (feature: any) => feature.properties.name === "CM21"
-    );
+    const center: LatLngExpression = [51.505, -0.09];222
 
     return (
         <div className = "h-[500px] w-full">

@@ -9,19 +9,19 @@ export type LinearRing = Position[];
 export type PolygonCoordinates = LinearRing[];
 export type MultiPolygonCoordinates = PolygonCoordinates[];
 
-type PolygonGeometry = {
+export type PolygonGeometry = {
     type: "Polygon",
     coordinates: PolygonCoordinates
 };
 
-type PolygonMultiGeometry = {
+export type MultiPolygonGeometry = {
     type: "MultiPolygon",
     coordinates: MultiPolygonCoordinates
 };
 
-type Geometry = PolygonGeometry | PolygonMultiGeometry;
+export type Geometry = PolygonGeometry | MultiPolygonGeometry;
 
-type GeojsonFeature = {
+export type GeojsonFeature = {
     type: "Feature",
     geometry: Geometry,
     properties: {
@@ -29,7 +29,7 @@ type GeojsonFeature = {
     }
 };
 
-type GeojsonFeatureCollection = {
+export type GeojsonFeatureCollection = {
     type: "FeatureCollection",
     features: GeojsonFeature[]
 };
