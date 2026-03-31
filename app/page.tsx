@@ -115,7 +115,7 @@ export default function HomePage() {
         </Card>
        <div className = "h-[75vh] min-h-[700px] w-full">
           <PostcodeMap postcodesData = {postcodesData}></PostcodeMap>
-        </div>`
+        </div>
       </div>
     </div>
   );

@@ -1,19 +1,42 @@
 'use client';
 
-import { MapContainer, TileLayer, GeoJSON } from 'react-leaflet';
-import postcodePolygons from '@/data/Sample_PostcodeDistrictsPolygons_multi.json';
+import { useRef, useEffect } from 'react';
+import { MapContainer, TileLayer, GeoJSON, useMap } from 'react-leaflet';
 import type { LatLngExpression } from "leaflet";
+import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
 import { PostcodeRow } from '@/lib/types/postcodes';
-import { GeojsonFeature } from '@/lib/types/geojson';
 
 type PostcodeMapProps = {
     postcodesData: PostcodeRow[];
 };
 
 export default function PostcodeMap({ postcodesData }: PostcodeMapProps) {
-    const center: LatLngExpression = [51.505, -0.09];222
+    const center: LatLngExpression = [51.505, -0.09];
+
+    function FitToFirstPostcode({ postcodesData }: PostcodeMapProps) {
+        const map = useMap();
+        const hasPolygonRef = useRef(false);
+        
+        useEffect(() => {
+            if ( ! postcodesData.length ) {
+                hasPolygonRef.current = false;
+                return;
+            }
+
+            if ( ! hasPolygonRef.current ) {
+                const polygon = postcodesData[0].feature;
+                const boundary = L.geoJSON(polygon).getBounds();
+                if ( boundary.isValid() ) {
+                    map.flyToBounds(boundary, { padding: [20, 20] });
+                }
+                hasPolygonRef.current = true;
+            }
+        }, [postcodesData]);
+
+        return null;
+    }
 
     return (
         <div className = "h-[500px] w-full">
@@ -24,6 +47,8 @@ export default function PostcodeMap({ postcodesData }: PostcodeMapProps) {
                 <TileLayer 
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"></TileLayer>
             
+            <FitToFirstPostcode postcodesData={postcodesData} />
+
             {postcodesData.map((data, _index) => (
                 <GeoJSON 
                 key = { data.district_norm } 
