@@ -37,6 +37,22 @@ function FitToFirstPostcode({ postcodesData }: PostcodeMapProps) {
 
 export default function PostcodeMap({ postcodesData }: PostcodeMapProps) {
     const center: LatLngExpression = [51.505, -0.09];
+    
+    const basePolygonStyle = {
+        color: "#2563eb",
+        weight: 2,
+        opacity: 1,
+        fillColor: "#3b82f6",
+        fillOpacity: 0.18,
+    };
+
+    const hoverPolygonStyle = {
+        color: "#1d4ed8",
+        weight: 4,
+        opacity: 1,
+        fillColor: "#60a5fa",
+        fillOpacity: 0.1,
+    };
 
     return (
         <div className = "h-[500px] w-full">

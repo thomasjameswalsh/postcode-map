@@ -100,6 +100,7 @@ export default function HomePage() {
                 value = {input}
                 onChange = {(e) => setInput(e.target.value)}
                 placeholder = "e.g. CM21"
+                maxLength={12}
               />
               <Button type = "submit">Add</Button>
               </Field>

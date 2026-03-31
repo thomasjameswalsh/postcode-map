@@ -22,8 +22,16 @@ export async function GET(request: NextRequest) {
         );
     }
 
+    const normalisedDistrict = normalisePostcodeDistrict(district);
+    const districtPattern = /^[A-Z]{1,2}([0-9]{1,2}|[0-9][A-Z])$/;
+    if ( ! districtPattern.test(normalisedDistrict) ) {
+        return NextResponse.json(
+            { error: "Postcode district is in an invalid format." },
+            { status: 400 }
+        );
+    }
+
     try {
-        const normalisedDistrict = normalisePostcodeDistrict(district);
         const queryResult = await pool.query(
             GET_POSTCODE_QUERY, 
             [normalisedDistrict]);
