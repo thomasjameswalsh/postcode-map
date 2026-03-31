@@ -57,7 +57,7 @@ export default function PostcodeMap({ postcodesData }: PostcodeMapProps) {
                     layer.bindTooltip(data.district_norm, {
                         sticky: true,
                         direction: "top",
-                        opacity: 0.95,
+                        opacity: 0.75,
                         offset: [0, -8],
                         className: "postcode-tooltip",
                     });

@@ -31,11 +31,36 @@ export default function HomePage() {
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
-    const trimmed = input.trim();
-    if (!trimmed) return;
+    setErrorMessage("");
+
+    const normalised = input
+      .trim()
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, "");
+    if ( ! normalised ) {
+      setErrorMessage("Please enter a valid postcode.");
+      return;
+    }
+
+    setInput(normalised);
+
+    const districtPattern = /^[A-Z]{1,2}([0-9]{1,2}|[0-9][A-Z])$/;
+    if ( ! districtPattern.test(normalised) ) {
+      setErrorMessage("Invalid postcode district format.");
+      return;
+    }
+
+    const alreadyExists = postcodesData.some(
+      (p) => p.district_norm === normalised
+    );
+
+    if ( alreadyExists ) {
+      setErrorMessage("District already added to list.");
+      return;
+    }
 
     const response = await fetch(
-      `/api/postcode?district=${encodeURIComponent(trimmed)}`
+      `/api/postcode?district=${encodeURIComponent(normalised)}`
     );
 
     if ( ! response.ok ) {
