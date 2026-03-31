@@ -11,6 +11,19 @@ const PostcodeMap = dynamic(
   { ssr: false }
 );
 
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import { Field } from "@/components/ui/field";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle
+} from "@/components/ui/card";
+
 export default function HomePage() {
   const [input, setInput] = useState("");
   const [postcodesData, setPostcodesData] = useState<PostcodeRow[]>([]);
@@ -37,51 +50,67 @@ export default function HomePage() {
 
   return (
     <div className = "p-6">
-    <h1 className = "text-2xl font-bold">Postcode Map</h1>
-    <div className = "mt-6">
-      <PostcodeMap postcodesData = {postcodesData}></PostcodeMap>
-    </div>
 
-    <p className = "mt-2">Select postcodes:</p>
+      <div className = "space-y-1">
+        <h1 className = "text-2xl font-bold">Thomas' Postcode Districts Map</h1>
+        <p className = "text-sm text-muted-foreground">
+          Select postcode districts
+        </p>
+      </div>
 
-    <form onSubmit = {handleSubmit} className = "mt-4">
-      <input 
-        value = {input}
-        onChange = {(e) => setInput(e.target.value)}
-        placeholder = "e.g. CM21"
-        className = "mt-4 w-full border p-2"
-      />
+      <div className="mt-6 grid gap-6 lg:grid-cols-[360px_minmax(0,1fr)]">
+        <Card className = "h-fit">
+          <CardHeader>
+            <CardTitle>List Postcode Districts</CardTitle>
+          </CardHeader>
 
-      <button 
-        type = "submit"
-        className = "mt-2 border px-4 py-2"
-      >Add</button>
-    </form>
+          <CardContent className="space-y-4">
+            <form onSubmit = {handleSubmit} className = "space-y-3">
+              <Field orientation="horizontal">
+              <Input 
+                value = {input}
+                onChange = {(e) => setInput(e.target.value)}
+                placeholder = "e.g. CM21"
+              />
+              <Button type = "submit">Add</Button>
+              </Field>
+            </form>
 
-    <div className = "mt-6">
-      <h2 className = "font-semibold">Entered Postcode</h2>
+            <Separator />
 
-      {postcodesData.map((postcodeData, _index) => (
-        <div
-          key = {postcodeData.district_norm}
-          className = "flex items-center gap-2 rounded-md border px-3 py-1 w-fit">
-        
-          <span>{postcodeData.district_norm}</span>
+            <div className = "flex flex-wrap gap-2">
+              {postcodesData.map((postcodeData, _index) => (
+                <div
+                  key = {postcodeData.district_norm}
+                  className="flex items-center justify-between gap-2 min-w-[100px] rounded-md border px-3 py-1">
+                  
+                  <div className = "min-w-[40px]">
+                  <span>{postcodeData.district_norm}</span>
+                  </div>
 
-          <button
-            type="button"
-            onClick={() => {
-              const updatedPostcodesData = postcodesData.filter(
-                (p: PostcodeRow) => p.district_norm !== postcodeData.district_norm
-              );
-              setPostcodesData(updatedPostcodesData);
-            }}
-            className="flex h-5 w-5 items-center justify-center rounded-full bg-gray-300 text-xs hover:bg-red-500 hover:text-white transition"
-          >✕</button>
-        </div>
-      ))}
-      
-    </div>
+                  <Separator orientation="vertical" />
+
+                  <Button
+                    type="button"
+                    variant = "ghost"
+                    size = "icon"
+                    onClick={() => {
+                      const updatedPostcodesData = postcodesData.filter(
+                        (p: PostcodeRow) => p.district_norm !== postcodeData.district_norm
+                      );
+                      setPostcodesData(updatedPostcodesData);
+                    }}
+                    className="h-5 w-5 hover:bg-red-500 hover:text-white transition"
+                  >✕</Button>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+       <div className = "h-[75vh] min-h-[700px] w-full">
+          <PostcodeMap postcodesData = {postcodesData}></PostcodeMap>
+        </div>`
+      </div>
     </div>
   );
 }
