@@ -12,31 +12,31 @@ type PostcodeMapProps = {
     postcodesData: PostcodeRow[];
 };
 
+function FitToFirstPostcode({ postcodesData }: PostcodeMapProps) {
+    const map = useMap();
+    const hasPolygonRef = useRef(false);
+    
+    useEffect(() => {
+        if ( ! postcodesData.length ) {
+            hasPolygonRef.current = false;
+            return;
+        }
+
+        if ( ! hasPolygonRef.current ) {
+            const polygon = postcodesData[0].feature;
+            const boundary = L.geoJSON(polygon).getBounds();
+            if ( boundary.isValid() ) {
+                map.flyToBounds(boundary, { padding: [20, 20] });
+            }
+            hasPolygonRef.current = true;
+        }
+    }, [postcodesData]);
+
+    return null;
+}
+
 export default function PostcodeMap({ postcodesData }: PostcodeMapProps) {
     const center: LatLngExpression = [51.505, -0.09];
-
-    function FitToFirstPostcode({ postcodesData }: PostcodeMapProps) {
-        const map = useMap();
-        const hasPolygonRef = useRef(false);
-        
-        useEffect(() => {
-            if ( ! postcodesData.length ) {
-                hasPolygonRef.current = false;
-                return;
-            }
-
-            if ( ! hasPolygonRef.current ) {
-                const polygon = postcodesData[0].feature;
-                const boundary = L.geoJSON(polygon).getBounds();
-                if ( boundary.isValid() ) {
-                    map.flyToBounds(boundary, { padding: [20, 20] });
-                }
-                hasPolygonRef.current = true;
-            }
-        }, [postcodesData]);
-
-        return null;
-    }
 
     return (
         <div className = "h-[500px] w-full">
@@ -52,7 +52,16 @@ export default function PostcodeMap({ postcodesData }: PostcodeMapProps) {
             {postcodesData.map((data, _index) => (
                 <GeoJSON 
                 key = { data.district_norm } 
-                data = { data.feature } />
+                data = { data.feature }
+                onEachFeature = {(_feature, layer) => {
+                    layer.bindTooltip(data.district_norm, {
+                        sticky: true,
+                        direction: "top",
+                        opacity: 0.95,
+                        offset: [0, -8],
+                        className: "postcode-tooltip",
+                    });
+                }} />
             ))};
         </MapContainer>
         </div>

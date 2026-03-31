@@ -2,6 +2,13 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
+.postcode-tooltip {
+  font-size: 14px;
+  font-weight: 600;
+  padding: 5px 9px;
+  border-radius: 8px;
+}
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
