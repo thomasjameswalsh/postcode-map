@@ -11,7 +11,6 @@ const PostcodeMap = dynamic(
   { ssr: false }
 );
 
-import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Field } from "@/components/ui/field";
@@ -27,6 +26,7 @@ import {
 export default function HomePage() {
   const [input, setInput] = useState("");
   const [postcodesData, setPostcodesData] = useState<PostcodeRow[]>([]);
+  const [errorMessage, setErrorMessage] = useState<string>("");
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -39,13 +39,17 @@ export default function HomePage() {
     );
 
     if ( ! response.ok ) {
-      console.log("Postcode district not recognised.");
+      if ( response.status === 404) {
+        setErrorMessage("Map data for this postcode district cannot be found.");
+      } else {
+        setErrorMessage(`Something went wrong, please try again. Code ${response.status}`);
+      }
       return;
     }
-
     const responseData: PostcodeRow = await response.json();
     setPostcodesData((prev) => [...prev, responseData]);
     setInput("");
+    setErrorMessage("");
   }
 
   return (
@@ -75,6 +79,8 @@ export default function HomePage() {
               <Button type = "submit">Add</Button>
               </Field>
             </form>
+
+            {errorMessage && <p className = "text-sm text-red-600 mt-1">{errorMessage}</p>}
 
             <Separator />
 
