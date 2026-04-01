@@ -77,6 +77,15 @@ export default function PostcodeMap({ postcodesData }: PostcodeMapProps) {
                         offset: [0, -8],
                         className: "postcode-tooltip",
                     });
+
+                    layer.on({
+                        mouseover: (e) => {
+                            e.target.setStyle(hoverPolygonStyle);
+                        },
+                        mouseout: (e) => {
+                            e.target.setStyle(basePolygonStyle);
+                        }
+                    });
                 }} />
             ))};
         </MapContainer>
