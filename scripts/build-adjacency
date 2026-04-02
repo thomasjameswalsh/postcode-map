@@ -1,0 +1,140 @@
+import { loadEnvConfig } from "@next/env";
+import { Client } from "pg";
+
+loadEnvConfig(process.cwd());
+
+const QUERY_POSTGIS_EXISTS = 
+    `
+    SELECT EXISTS
+    (
+        SELECT 1
+        FROM pg_extension
+        WHERE extname = 'postgis'
+    ) AS postgis_exists;
+    `;
+
+const QUERY_CHECK_GEOM_COLUMN_EXISTS =
+    `
+    SELECT EXISTS
+    (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_name = 'postcodes' AND column_name = 'geom'
+    ) AS geom_exists;
+    `;
+
+const QUERY_CREATE_POSTCODE_ADJACENCY =
+    `
+    CREATE TABLE IF NOT EXISTS postcode_adjacency (
+        district_norm text NOT NULL,
+        neighbour_district_norm text NOT NULL,
+
+        PRIMARY KEY (district_norm, neighbour_district_norm),
+
+        CONSTRAINT postcode_adjacency_not_self_check
+            CHECK (district_norm <> neighbour_district_norm),
+        
+        CONSTRAINT postcode_adjacency_district_fk
+            FOREIGN KEY (district_norm)
+            REFERENCES postcodes (district_norm)
+            ON DELETE CASCADE,
+        
+        CONSTRAINT postcode_adjacency_neighbour_fk
+            FOREIGN KEY (neighbour_district_norm)
+            REFERENCES postcodes (district_norm)
+            ON DELETE CASCADE
+    );
+    `;
+
+// ST_Touches is an index aware predicate in PostGIS, so although this looks
+// brute force, the candidate pruning by bounding-box locality should be applied 
+const QUERY_CALCULATE_POPULATE_POSTCODE_ADJACENCY =
+    `
+    INSERT INTO postcode_adjacency (
+        district_norm,
+        neighbour_district_norm
+    )
+    SELECT
+        a.district_norm,
+        b.district_norm
+    FROM
+        postcodes a
+    JOIN
+        postcodes b
+    ON a.district_norm <> b.district_norm
+    AND ST_Touches(a.geom, b.geom)
+    ON CONFLICT (district_norm, neighbour_district_norm) DO NOTHING;
+    `;
+
+const QUERY_COUNT_ADJACENCY_ROWS = 
+    `
+    SELECT COUNT(*)::int AS count
+    FROM postcode_adjacency;
+    `;
+
+const QUERY_GET_CM21_NEIGHBOURS =
+    `
+    SELECT neighbour_district_norm
+    FROM postcode_adjacency
+    WHERE district_norm = 'CM21'
+    ORDER BY neighbour_district_norm;
+    `;
+
+const QUERY_GET_CM20_NEIGHBOURS =
+    `
+    SELECT neighbour_district_norm
+    FROM postcode_adjacency
+    WHERE district_norm = 'CM20'
+    ORDER BY neighbour_district_norm;
+    `;
+
+async function main() {
+    const connectionString = process.env.DATABASE_URL_UNPOOLED;
+    if ( ! connectionString ) throw new Error("Missing database unpooled connection string.");
+
+    const client = new Client({
+        connectionString
+    });
+
+    await client.connect();
+
+    try {
+        console.log("(1) Checking that PostGIS extension exists...");
+        const postgis_exists = await client.query(QUERY_POSTGIS_EXISTS);
+        const flag_postgis = postgis_exists.rows[0]?.postgis_exists;
+        if ( ! flag_postgis ) throw new Error("PostGIS extension does not exist.");
+
+        console.log("(2) Checking that the 'geom' column exists...");
+        const geom_exists = await client.query(QUERY_CHECK_GEOM_COLUMN_EXISTS);
+        const flag_geom = geom_exists.rows[0]?.geom_exists;
+        if ( ! flag_geom ) throw new Error("Geom column does not exist.");
+
+        console.log("(3) Creating postcode_adjacency if it does not exist...");
+        await client.query(QUERY_CREATE_POSTCODE_ADJACENCY);
+
+        console.log("(4) Calculating postcode adjacency and populating table...");
+        await client.query(QUERY_CALCULATE_POPULATE_POSTCODE_ADJACENCY);
+
+        const adjacencyCount = await client.query(QUERY_COUNT_ADJACENCY_ROWS);
+        const adjacencyCountValue = adjacencyCount.rows[0].count;
+        if ( ! adjacencyCountValue ) throw new Error("No adjacency rows created.");
+
+        console.log(`(5) Check adjacency table count: ${adjacencyCountValue}`);
+
+        console.log("(6) Requesting postcode neighbours of district CM21...");
+        const neighboursCM21 = await client.query(QUERY_GET_CM21_NEIGHBOURS);
+        console.table(neighboursCM21.rows);
+
+        console.log("(7) Requesting postcode neighbours of district CM20...");
+        const neighboursCM20 = await client.query(QUERY_GET_CM20_NEIGHBOURS);
+        console.table(neighboursCM20.rows);
+    } finally {
+        await client.end();
+    }
+}
+
+main().catch((e) => {
+    console.error("Build adjacency failed.");
+    console.error(e);
+    process.exit(1);
+});
