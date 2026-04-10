@@ -6,6 +6,8 @@ import dynamic from "next/dynamic";
 import { PostcodeRow } from "@/lib/types/postcodes";
 import { GeojsonFeature } from "@/lib/types/geojson";
 
+import { validatePostcodeDistrict } from "@/lib/utils/postcodeFormats";
+
 const PostcodeMap = dynamic(
   () => import('@/components/PostcodeMap'),
   { ssr: false }
@@ -29,95 +31,119 @@ export default function HomePage() {
   const [neighboursData, setNeighboursData] = useState<PostcodeRow[]>([]);
   const [errorMessage, setErrorMessage] = useState<string>("");
 
+  async function fetchPostcodeRow(
+    district_norm: string
+  ): Promise<PostcodeRow | null> {
+    const response = await fetch(
+      `/api/postcode?district=${encodeURIComponent(district_norm)}`
+    );
+
+    if ( ! response.ok ) {
+      const errorBody = await response.json()
+      const errorMessage = errorBody?.error;
+      console.error("Fetch postcode row failed:", {
+        status: response.status,
+        message: errorMessage
+      });
+
+      if ( response.status === 404) {
+        setErrorMessage("Map for this postcode cannot be found.");
+      } else {
+        setErrorMessage(
+          `Something went wrong: ${errorMessage} (code ${response.status})`
+        );
+      }
+
+      return null;
+    }
+
+    return await response.json() as PostcodeRow;
+  }
+
+  async function fetchNeighbourRows(
+    district_norm: string
+  ): Promise<PostcodeRow[] | null> {
+    const response = await fetch(
+      `/api/neighbours?district=${encodeURIComponent(district_norm)}`
+    );
+
+    if ( ! response.ok ) {
+      const errorBody = await response.json()
+      const errorMessage = errorBody?.error;
+      console.error("Fetch neighbour rows failed:", {
+        status: response.status,
+        message: errorMessage
+      });
+
+      setErrorMessage(
+        `Something went wrong: ${errorMessage} (code ${response.status})`
+      );
+
+      return null;
+    }
+
+    return await response.json() as PostcodeRow[];
+  }
+
+  function filterDuplicatePostcodes(
+    target: PostcodeRow[],
+    selectedRows: PostcodeRow[],
+    neighbourRows: PostcodeRow[]) {
+    const existingDistricts = new Set<string>([
+      ...selectedRows.map((row) => row.district_norm),
+      ...neighbourRows.map((row) => row.district_norm),
+    ]);
+
+    return target.filter((row) => {
+      return ! existingDistricts.has(row.district_norm);
+    });
+  }
+
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-
     setErrorMessage("");
 
-    // The normalised and regex could be their own functions 
-    // Maybe even one that checks validity and returns an error message somehow 
-    const normalised = input
-      .trim()
-      .toUpperCase()
-      .replace(/[^A-Z0-9]/g, "");
-    if ( ! normalised ) {
-      setErrorMessage("Please enter a valid postcode.");
+    const validationResult = validatePostcodeDistrict(input);
+    if ( ! validationResult.ok ) {
+      setErrorMessage(validationResult.error);
       return;
     }
 
+    const normalised = validationResult.value;
     setInput(normalised);
 
-    const districtPattern = /^[A-Z]{1,2}([0-9]{1,2}|[0-9][A-Z])$/;
-    if ( ! districtPattern.test(normalised) ) {
-      setErrorMessage("Invalid postcode district format.");
-      return;
-    }
-
-    const setOfDistricts = new Set<string>([
-      ...postcodesData.map((row) => row.district_norm)
-    ]);
-    if ( setOfDistricts.has(normalised) ) {
+    const inList = postcodesData.some((row) => row.district_norm === normalised);
+    if ( inList ) {
       setErrorMessage("District already added to list.");
       return;
     }
 
-    // Here we check if it exists in neighborus set or not 
-    // If it does, move it 
-    const checkForInputDistrictData = neighboursData.find((data) => {
-      data.district_norm === normalised
-    });
-    if ( checkForInputDistrictData ) {
-      const updatedNeighboursData = neighboursData.filter(
-        (p: PostcodeRow) => p.district_norm !== normalised
-      );
-      
-      setNeighboursData(updatedNeighboursData);
-      setPostcodesData((prev) => [...prev, checkForInputDistrictData]);
-      setInput("");
-      setErrorMessage("");
-      return;
-    }
+    let nextPostcodesData: PostcodeRow[] = postcodesData;
+    let nextNeighboursData: PostcodeRow[] = neighboursData;
 
-    // This could be it's own function
-    const postcodeResponse = await fetch(
-      `/api/postcode?district=${encodeURIComponent(normalised)}`
-    );
-
-    if ( ! postcodeResponse.ok ) {
-      if ( postcodeResponse.status === 404) {
-        setErrorMessage("Map data for this postcode district cannot be found.");
-      } else {
-        setErrorMessage(`Something went wrong, please try again. Code ${postcodeResponse.status}`);
-      }
-      return;
-    }
-
-    const postcodeResponseData: PostcodeRow = await postcodeResponse.json();
-
-    // This could be it's own function 
-    const neighboursResponse = await fetch(
-      `api/neighbours?district=${encodeURIComponent(normalised)}`
-    );
-    if ( neighboursResponse.ok ) {
-      const neighboursResponseData: PostcodeRow[] = await neighboursResponse.json();
-
-      const existingDistricts = new Set<string>([
-        ...postcodesData.map((row) => row.district_norm),
-        ...neighboursData.map((row) => row.district_norm),
-      ]);
-
-      const filteredNeighbours = neighboursResponseData.filter((row) => {
-        return (! existingDistricts.has(row.district_norm));
-      });
-
-      setNeighboursData((prev) => [...prev, ...filteredNeighbours]);
+    const findInNeighbours = neighboursData.find((row) => row.district_norm === normalised);
+    if ( findInNeighbours ) {
+      nextNeighboursData = nextNeighboursData.filter((row) => row.district_norm !== normalised);
+      nextPostcodesData = [...nextPostcodesData, findInNeighbours];
     } else {
-        setErrorMessage(`Neighbours for this postcode cannot be found. Code ${neighboursResponse.status}`);
+      const postcodeResponseData = await fetchPostcodeRow(normalised);
+      if ( ! postcodeResponseData ) return;
+      
+      nextPostcodesData = [...nextPostcodesData, postcodeResponseData];
     }
-
-    setPostcodesData((prev) => [...prev, postcodeResponseData]);
     setInput("");
-    setErrorMessage("");
+
+    const neighboursResponseData = await fetchNeighbourRows(normalised);
+    if ( ! neighboursResponseData ) return;
+
+    const filteredNeighbourRows= filterDuplicatePostcodes(
+      neighboursResponseData,
+      nextPostcodesData,
+      nextNeighboursData);
+    nextNeighboursData = [...nextNeighboursData, ...filteredNeighbourRows];
+    
+    setPostcodesData(nextPostcodesData);
+    setNeighboursData(nextNeighboursData);
   }
 
   return (
