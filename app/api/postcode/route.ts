@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
 
         if ( queryResult.rows.length === 0 ) {
             return NextResponse.json(
-                { error: "Postcode district not found in database." },
+                { error: "Postcode not found." },
                 { status: 404 }
             );
         }

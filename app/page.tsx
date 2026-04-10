@@ -41,17 +41,22 @@ export default function HomePage() {
     if ( ! response.ok ) {
       const errorBody = await response.json()
       const errorMessage = errorBody?.error;
-      console.error("Fetch postcode row failed:", {
-        status: response.status,
-        message: errorMessage
-      });
 
-      if ( response.status === 404) {
-        setErrorMessage("Map for this postcode cannot be found.");
+      if ( response.status >= 500 ) {
+        console.error("Fetch postcode server error:", {
+          status: response.status,
+          message: errorMessage
+        });
       } else {
-        setErrorMessage(
-          `Something went wrong: ${errorMessage} (code ${response.status})`
-        );
+        console.warn("Fetch postcode issue:", {
+          status: response.status,
+          message: errorMessage
+        });
+      }
+      if ( response.status === 404 ) {
+        setErrorMessage("Postcode not found.");
+      } else {
+        setErrorMessage(`${errorMessage ?? "Something went wrong."} (${response.status})`);
       }
 
       return null;
@@ -70,13 +75,21 @@ export default function HomePage() {
     if ( ! response.ok ) {
       const errorBody = await response.json()
       const errorMessage = errorBody?.error;
-      console.error("Fetch neighbour rows failed:", {
-        status: response.status,
-        message: errorMessage
-      });
+
+      if ( response.status >= 500 ) {
+        console.error("Fetch neighbours server error:", {
+          status: response.status,
+          message: errorMessage
+        });
+      } else {
+        console.warn("Fetch neighbours issue:", {
+          status: response.status,
+          message: errorMessage
+        });
+      }
 
       setErrorMessage(
-        `Something went wrong: ${errorMessage} (code ${response.status})`
+        `${errorMessage ?? "Something went wrong."} (status code ${response.status})`
       );
 
       return null;
