@@ -26,6 +26,7 @@ import {
 export default function HomePage() {
   const [input, setInput] = useState("");
   const [postcodesData, setPostcodesData] = useState<PostcodeRow[]>([]);
+  const [neighboursData, setNeighboursData] = useState<PostcodeRow[]>([]);
   const [errorMessage, setErrorMessage] = useState<string>("");
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -33,6 +34,8 @@ export default function HomePage() {
 
     setErrorMessage("");
 
+    // The normalised and regex could be their own functions 
+    // Maybe even one that checks validity and returns an error message somehow 
     const normalised = input
       .trim()
       .toUpperCase()
@@ -50,29 +53,69 @@ export default function HomePage() {
       return;
     }
 
-    const alreadyExists = postcodesData.some(
-      (p) => p.district_norm === normalised
-    );
-
-    if ( alreadyExists ) {
+    const setOfDistricts = new Set<string>([
+      ...postcodesData.map((row) => row.district_norm)
+    ]);
+    if ( setOfDistricts.has(normalised) ) {
       setErrorMessage("District already added to list.");
       return;
     }
 
-    const response = await fetch(
+    // Here we check if it exists in neighborus set or not 
+    // If it does, move it 
+    const checkForInputDistrictData = neighboursData.find((data) => {
+      data.district_norm === normalised
+    });
+    if ( checkForInputDistrictData ) {
+      const updatedNeighboursData = neighboursData.filter(
+        (p: PostcodeRow) => p.district_norm !== normalised
+      );
+      
+      setNeighboursData(updatedNeighboursData);
+      setPostcodesData((prev) => [...prev, checkForInputDistrictData]);
+      setInput("");
+      setErrorMessage("");
+      return;
+    }
+
+    // This could be it's own function
+    const postcodeResponse = await fetch(
       `/api/postcode?district=${encodeURIComponent(normalised)}`
     );
 
-    if ( ! response.ok ) {
-      if ( response.status === 404) {
+    if ( ! postcodeResponse.ok ) {
+      if ( postcodeResponse.status === 404) {
         setErrorMessage("Map data for this postcode district cannot be found.");
       } else {
-        setErrorMessage(`Something went wrong, please try again. Code ${response.status}`);
+        setErrorMessage(`Something went wrong, please try again. Code ${postcodeResponse.status}`);
       }
       return;
     }
-    const responseData: PostcodeRow = await response.json();
-    setPostcodesData((prev) => [...prev, responseData]);
+
+    const postcodeResponseData: PostcodeRow = await postcodeResponse.json();
+
+    // This could be it's own function 
+    const neighboursResponse = await fetch(
+      `api/neighbours?district=${encodeURIComponent(normalised)}`
+    );
+    if ( neighboursResponse.ok ) {
+      const neighboursResponseData: PostcodeRow[] = await neighboursResponse.json();
+
+      const existingDistricts = new Set<string>([
+        ...postcodesData.map((row) => row.district_norm),
+        ...neighboursData.map((row) => row.district_norm),
+      ]);
+
+      const filteredNeighbours = neighboursResponseData.filter((row) => {
+        return (! existingDistricts.has(row.district_norm));
+      });
+
+      setNeighboursData((prev) => [...prev, ...filteredNeighbours]);
+    } else {
+        setErrorMessage(`Neighbours for this postcode cannot be found. Code ${neighboursResponse.status}`);
+    }
+
+    setPostcodesData((prev) => [...prev, postcodeResponseData]);
     setInput("");
     setErrorMessage("");
   }
@@ -140,7 +183,10 @@ export default function HomePage() {
           </CardContent>
         </Card>
        <div className = "h-[75vh] min-h-[700px] w-full">
-          <PostcodeMap postcodesData = {postcodesData}></PostcodeMap>
+          <PostcodeMap
+            postcodesData = {postcodesData}
+            neighboursData = {neighboursData}
+          ></PostcodeMap>
         </div>
       </div>
     </div>

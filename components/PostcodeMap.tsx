@@ -9,10 +9,11 @@ import 'leaflet/dist/leaflet.css';
 import { PostcodeRow } from '@/lib/types/postcodes';
 
 type PostcodeMapProps = {
-    postcodesData: PostcodeRow[];
+    postcodesData: PostcodeRow[],
+    neighboursData: PostcodeRow[]
 };
 
-function FitToFirstPostcode({ postcodesData }: PostcodeMapProps) {
+function FitToFirstPostcode({ postcodesData }: { postcodesData: PostcodeRow[] }) {
     const map = useMap();
     const hasPolygonRef = useRef(false);
     
@@ -35,10 +36,10 @@ function FitToFirstPostcode({ postcodesData }: PostcodeMapProps) {
     return null;
 }
 
-export default function PostcodeMap({ postcodesData }: PostcodeMapProps) {
+export default function PostcodeMap({ postcodesData, neighboursData }: PostcodeMapProps) {
     const center: LatLngExpression = [51.505, -0.09];
     
-    const basePolygonStyle = {
+    const blue_basePolygonStyle = {
         color: "#2563eb",
         weight: 2,
         opacity: 1,
@@ -46,12 +47,28 @@ export default function PostcodeMap({ postcodesData }: PostcodeMapProps) {
         fillOpacity: 0.18,
     };
 
-    const hoverPolygonStyle = {
+    const blue_hoverPolygonStyle = {
         color: "#1d4ed8",
         weight: 4,
         opacity: 1,
         fillColor: "#60a5fa",
-        fillOpacity: 0.1,
+        fillOpacity: 0.18,
+    };
+
+    const grey_basePolygonStyle = {
+        color: "#6b7280",
+        weight: 2,
+        opacity: 0.7,
+        fillColor: "#9ca3af",
+        fillOpacity: 0.18,
+    };
+
+    const grey_hoverPolygonStyle = {
+        color: "#4b5563",
+        weight: 4,
+        opacity: 0.9,
+        fillColor: "#9ca3af",
+        fillOpacity: 0.18,
     };
 
     return (
@@ -69,6 +86,7 @@ export default function PostcodeMap({ postcodesData }: PostcodeMapProps) {
                 <GeoJSON 
                 key = { data.district_norm } 
                 data = { data.feature }
+                style = { blue_basePolygonStyle }
                 onEachFeature = {(_feature, layer) => {
                     layer.bindTooltip(data.district_norm, {
                         sticky: true,
@@ -80,10 +98,35 @@ export default function PostcodeMap({ postcodesData }: PostcodeMapProps) {
 
                     layer.on({
                         mouseover: (e) => {
-                            e.target.setStyle(hoverPolygonStyle);
+                            e.target.setStyle(blue_hoverPolygonStyle);
                         },
                         mouseout: (e) => {
-                            e.target.setStyle(basePolygonStyle);
+                            e.target.setStyle(blue_basePolygonStyle);
+                        }
+                    });
+                }} />
+            ))};
+
+            {neighboursData.map((data, _index) => (
+                <GeoJSON 
+                key = { data.district_norm } 
+                data = { data.feature }
+                style = { grey_basePolygonStyle }
+                onEachFeature = {(_feature, layer) => {
+                    layer.bindTooltip(data.district_norm, {
+                        sticky: true,
+                        direction: "top",
+                        opacity: 0.75,
+                        offset: [0, -8],
+                        className: "postcode-tooltip",
+                    });
+
+                    layer.on({
+                        mouseover: (e) => {
+                            e.target.setStyle(grey_hoverPolygonStyle);
+                        },
+                        mouseout: (e) => {
+                            e.target.setStyle(grey_basePolygonStyle);
                         }
                     });
                 }} />
